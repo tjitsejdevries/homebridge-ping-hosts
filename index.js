@@ -4,12 +4,12 @@ var ping = require("net-ping");
 var Service, Characteristic;
 
 
-module.exports = function(homebridge) {
+module.exports = function (homebridge) {
 
-	Service = homebridge.hap.Service;
-	Characteristic = homebridge.hap.Characteristic;
+    Service = homebridge.hap.Service;
+    Characteristic = homebridge.hap.Characteristic;
 
-	homebridge.registerPlatform("@vectronic/homebridge-ping-hosts", "PingHosts", PingHostsPlatform);
+    homebridge.registerPlatform("@vectronic/homebridge-ping-hosts", "PingHosts", PingHostsPlatform);
 };
 
 
@@ -22,7 +22,7 @@ function getRandomInt(min, max) {
 
 
 function PingHostsPlatform(log, config) {
-	this.log = log;
+    this.log = log;
     this.hosts = config["hosts"] || [];
 }
 
@@ -33,7 +33,7 @@ PingHostsPlatform.prototype.accessories = function (callback) {
         throw new Error("Max 100 hosts supported, might run into ping session ID problems otherwise....");
     }
     for (var i = 0; i < this.hosts.length; i++) {
-        accessories.push(new PingHostContactAccessory(this.log, this.hosts[i], i+1));
+        accessories.push(new PingHostContactAccessory(this.log, this.hosts[i], i + 1));
     }
     callback(accessories);
 };
@@ -43,9 +43,7 @@ function PingHostContactAccessory(log, config, id) {
 
     this.log = log;
     this.id = id;
-
-    this.name = config["name"];
-    if (!this.name) {
+    this.name = config["name"]; if (!this.name) {
         throw new Error("Missing name!");
     }
 
@@ -66,7 +64,7 @@ function PingHostContactAccessory(log, config, id) {
 
     this.services.ContactSensor
         .getCharacteristic(Characteristic.ContactSensorState)
-        .setValue(Characteristic.ContactSensorState.CONTACT_DETECTED);
+        .setValue(Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
 
     this.options = {
         networkProtocol: ping.NetworkProtocol.IPv4,
@@ -74,7 +72,7 @@ function PingHostContactAccessory(log, config, id) {
         timeout: (config["timeout"] || 25) * 1000
     };
 
-	setInterval(this.doPing.bind(this), (config["interval"] || 60) * 1000);
+    setInterval(this.doPing.bind(this), (config["interval"] || 60) * 1000);
 }
 
 PingHostContactAccessory.prototype.doPing = function () {
@@ -87,10 +85,10 @@ PingHostContactAccessory.prototype.doPing = function () {
     var self = this;
 
     session.on("error", function (error) {
-        self.log("[" + self.name + "] socket error with session " + self.options.sessionId +  ": " + error.toString());
+        self.log("[" + self.name + "] socket error with session " + self.options.sessionId + ": " + error.toString());
         self.services.ContactSensor
             .getCharacteristic(Characteristic.ContactSensorState)
-            .updateValue(Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+            .updateValue(Characteristic.ContactSensorState.CONTACT_DETECTED);
     });
 
     session.on("close", function () {
@@ -102,12 +100,12 @@ PingHostContactAccessory.prototype.doPing = function () {
             self.log("[" + self.name + "] response error: " + error.toString() + " for " + target + " at " + sent + " with session " + self.options.sessionId);
             self.services.ContactSensor
                 .getCharacteristic(Characteristic.ContactSensorState)
-                .updateValue(Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+                .updateValue(Characteristic.ContactSensorState.CONTACT_DETECTED);
         }
         else {
             self.services.ContactSensor
                 .getCharacteristic(Characteristic.ContactSensorState)
-                .updateValue(Characteristic.ContactSensorState.CONTACT_DETECTED);
+                .updateValue(Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
         }
     });
 };
